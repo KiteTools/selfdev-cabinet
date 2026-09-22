@@ -1,0 +1,10 @@
+{
+  "sp_contact_id": "SYNTHETIC_CONTACT_REPLACE_WITH_YOUR_TEST_CONTACT",
+  "event_type": "task_done",
+  "source_ref_id": "fictional-test-task-001",
+  "value_text": "Completed one practice exercise",
+  "value_number": 1,
+  "text": "Fictional test: I finished a small exercise after checking its requirements.",
+  "payload": { "fixture": true },
+  "occurred_at": "2030-04-15T17:35:00Z"
+}

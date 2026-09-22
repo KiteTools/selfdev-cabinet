@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ru" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Личный кабинет</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "var(--lk-accent)",
+            "background-light": "var(--lk-surface)",
+            "background-dark": "var(--lk-surface)",
+            panel: "var(--lk-panel-solid)",
+            "border-soft": "var(--lk-border)",
+          },
+          fontFamily: {
+            display: ["Inter", "system-ui", "sans-serif"]
+          },
+          borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="https://telegram.org/js/telegram-web-apps.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+
+  <!-- Loading screen -->
+  <div id="screen-loading" class="screen active">
+    <div class="center-box">
+      <div class="spinner"></div>
+      <p class="text-slate-500 dark:text-slate-400">Загрузка...</p>
+    </div>
+  </div>
+
+  <!-- /start instruction screen -->
+  <div id="screen-start" class="screen">
+    <div class="center-box">
+      <div class="bg-primary/10 p-4 rounded-2xl mb-2">
+        <span class="material-symbols-outlined text-primary text-4xl">smart_toy</span>
+      </div>
+      <h2 class="text-xl font-bold">Добро пожаловать</h2>
+      <p class="text-slate-500 dark:text-slate-400 max-w-xs">Сначала сделай <strong class="text-slate-700 dark:text-slate-200">/start</strong> в боте, затем нажми кнопку ниже.</p>
+      <button id="btn-retry" class="mt-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all shadow-md shadow-primary/20">Проверить ещё раз</button>
+    </div>
+  </div>
+
+  <!-- Login Widget fallback screen -->
+  <div id="screen-login" class="screen">
+    <div class="center-box">
+      <div class="bg-primary/10 p-4 rounded-2xl mb-2">
+        <span class="material-symbols-outlined text-primary text-4xl">login</span>
+      </div>
+      <h2 class="text-xl font-bold">Войти через Telegram</h2>
+      <div id="telegram-login-widget" class="mt-4"></div>
+    </div>
+  </div>
+
+  <!-- Main app -->
+  <div id="screen-app" class="screen">
+
+    <p id="transport-notice" role="status" class="px-4 py-2 text-sm" hidden></p>
+    <!-- Top Navigation Bar -->
+    <header class="app-shell-header sticky top-0 z-50 px-4 lg:px-10 py-3">
+      <div class="app-shell-frame max-w-7xl mx-auto flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <div class="app-shell-brand flex items-center gap-3 min-w-0">
+            <div class="app-brand-mark bg-primary text-white p-1.5 rounded-lg">
+              <span class="material-symbols-outlined text-2xl">dashboard</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-bold tracking-tight truncate">Личный кабинет</h2>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button id="btn-theme-toggle" class="app-shell-theme-toggle p-2 rounded-full hover:bg-primary/10 text-slate-600 dark:text-slate-400 transition-colors" title="Переключить тему">
+              <span class="material-symbols-outlined theme-icon-dark">dark_mode</span>
+              <span class="material-symbols-outlined theme-icon-light hidden">light_mode</span>
+            </button>
+            <div id="status-bar" class="status-bar app-shell-status">
+              <span id="status-text" class="text-xs font-medium">Загрузка...</span>
+            </div>
+          </div>
+        </div>
+
+        <nav class="sections-nav app-shell-tabs flex items-center gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
+          <button class="tab app-shell-tab shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all" data-tab="dashboard">Дэшборд</button>
+          <button class="tab app-shell-tab shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all" data-tab="quick">Базовые</button>
+          <button class="tab app-shell-tab shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all" data-tab="settings">Все переменные</button>
+          <button class="tab app-shell-tab shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all" data-tab="consultations">Summary</button>
+          <button class="tab app-shell-tab shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all" data-tab="diaries">Дневники</button>
+          <button class="tab app-shell-tab shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all" data-tab="razbor">Разбор</button>
+          <button class="tab app-shell-tab shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all" data-tab="links">Связки</button>
+          <button class="tab app-shell-tab shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all" data-tab="retro">Ретро</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-6 md:py-8 space-y-6">
+
+      <!-- Tab: Дэшборд -->
+      <div id="tab-dashboard" class="tab-content">
+        <div class="space-y-6">
+          <section class="dashboard-card dashboard-toolbar">
+            <div class="dashboard-toolbar-layout">
+              <div class="dashboard-toolbar-copy">
+                <p class="text-xs uppercase tracking-[0.18em] text-primary font-bold">Обзор клиента</p>
+                <h3 class="text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100 md:text-[2rem]">Дэшборд</h3>
+                <p id="dashboard-period-note" class="text-sm text-slate-500 dark:text-slate-400">Загрузка периода...</p>
+              </div>
+              <div class="dashboard-toolbar-actions">
+                <button type="button" class="dashboard-action-btn dashboard-action-btn-compact" data-dashboard-action="retro">
+                  <span class="material-symbols-outlined text-base">history_edu</span>
+                  Сделать ретро
+                </button>
+                <button type="button" class="dashboard-action-btn dashboard-action-btn-compact" data-dashboard-action="signals">
+                  <span class="material-symbols-outlined text-base">auto_fix_high</span>
+                  Обновить сигналы
+                </button>
+                <button type="button" class="dashboard-action-btn dashboard-action-btn-compact" data-dashboard-action="diaries">
+                  <span class="material-symbols-outlined text-base">menu_book</span>
+                  Открыть дневники
+                </button>
+                <button type="button" class="dashboard-action-btn dashboard-action-btn-compact" data-dashboard-action="links">
+                  <span class="material-symbols-outlined text-base">link</span>
+                  Открыть связки
+                </button>
+                <button id="btn-dashboard-summary" type="button" class="dashboard-action-btn dashboard-action-btn-compact" data-dashboard-action="summary" disabled>
+                  <span class="material-symbols-outlined text-base">summarize</span>
+                  Открыть последнее summary
+                </button>
+                <button id="btn-dashboard-refresh" type="button" class="dashboard-action-btn dashboard-action-btn-compact dashboard-refresh-btn">
+                  <span class="material-symbols-outlined text-base">refresh</span>
+                  Обновить
+                </button>
+              </div>
+            </div>
+            <div id="dashboard-errors" class="mt-4 space-y-2"></div>
+          </section>
+
+          <section id="dashboard-loading" class="lk-panel lk-panel-muted p-6 rounded-xl items-center justify-center gap-3" style="display:none">
+            <div class="spinner"></div>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Собираю дэшборд...</p>
+          </section>
+
+          <section class="grid grid-cols-1 xl:grid-cols-[1.12fr_0.88fr] gap-6 dashboard-top-grid">
+            <article id="dashboard-focus-card" class="dashboard-card dashboard-focus-card"></article>
+            <article id="dashboard-period-card" class="dashboard-card dashboard-period-card"></article>
+          </section>
+
+          <section class="dashboard-lower-grid">
+            <article class="dashboard-card">
+              <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+                <div>
+                  <h3 class="text-lg font-bold">Что изменилось</h3>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">Факты периода без дополнительной AI-интерпретации.</p>
+                </div>
+              </div>
+              <div id="dashboard-changes" class="dashboard-event-list"></div>
+            </article>
+
+            <article class="dashboard-card">
+              <div class="mb-4">
+                <h3 class="text-lg font-bold">Дневной контекст</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">То, с чем бот работает сейчас.</p>
+              </div>
+              <div id="dashboard-daily-context" class="dashboard-context-grid"></div>
+            </article>
+          </section>
+        </div>
+      </div>
+
+      <!-- Tab: Базовые -->
+      <div id="tab-quick" class="tab-content">
+        <div class="space-y-6">
+          <section class="lk-panel p-6 rounded-xl space-y-5">
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">bolt</span>
+              Вопросы
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div class="space-y-2 lk-form-field">
+                <label for="f-t1" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Время утром</label>
+                <div class="relative">
+                  <input type="time" id="f-t1" data-key="t1" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">wb_sunny</span>
+                </div>
+              </div>
+
+              <div class="space-y-2 lk-form-field">
+                <label for="f-t2" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Время вечером</label>
+                <div class="relative">
+                  <input type="time" id="f-t2" data-key="t2" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">nights_stay</span>
+                </div>
+              </div>
+
+              <div class="space-y-2 lk-form-field sm:col-span-2">
+                <label for="f-q_morning" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Вопрос утром</label>
+                <textarea id="f-q_morning" data-key="q_morning" rows="3" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+              </div>
+
+              <div class="space-y-2 lk-form-field sm:col-span-2">
+                <label for="f-q_evening" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Вопрос вечером</label>
+                <textarea id="f-q_evening" data-key="q_evening" rows="3" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+              </div>
+            </div>
+          </section>
+
+          <details class="accordion lk-panel group rounded-xl overflow-hidden" open>
+            <summary class="px-6 py-4 font-semibold cursor-pointer flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-xl">self_improvement</span> Аффирмации</span>
+              <span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+            </summary>
+            <div class="accordion-body px-6 pb-5 space-y-4" id="group-affirmations"></div>
+          </details>
+
+          <details class="accordion lk-panel group rounded-xl overflow-hidden">
+            <summary class="px-6 py-4 font-semibold cursor-pointer flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-xl">format_quote</span> Цитаты</span>
+              <span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+            </summary>
+            <div class="accordion-body px-6 pb-5 space-y-4">
+              <div id="group-quotes" class="space-y-4"></div>
+            </div>
+          </details>
+
+          <section class="lk-panel p-6 rounded-xl space-y-4">
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">track_changes</span>
+              Связка в фокусе
+            </h3>
+            <div class="space-y-2 lk-form-field">
+              <label for="f-gpt_situation" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Связка в фокусе</label>
+              <textarea id="f-gpt_situation" data-key="gpt_situation" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+            </div>
+          </section>
+
+          <section class="lk-panel rounded-xl overflow-hidden">
+            <div class="px-6 py-4 font-semibold flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-xl">history</span>
+              <span>Версии</span>
+            </div>
+            <div class="px-6 pb-5 space-y-4">
+              <div class="space-y-2 lk-form-field">
+                <label for="f-version" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Выберите версию</label>
+                <div class="relative">
+                  <select id="f-version" class="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                    <option value="">—</option>
+                  </select>
+                  <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+                </div>
+              </div>
+              <button id="btn-restore" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all shadow-md shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Восстановить</button>
+            </div>
+          </section>
+
+          <section class="lk-panel lk-panel-muted rounded-xl p-5 space-y-4">
+            <div class="space-y-1">
+              <h4 class="text-base font-semibold text-slate-900 dark:text-slate-100">Стартовые наборы</h4>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Применяет 10 аффирмаций, 10 цитат и вопросы на утро и вечер.</p>
+            </div>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+              <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="quote_pack" value="base" data-key="quote_pack" class="accent-primary">
+                <span>Research</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" name="quote_pack" value="pro" data-key="quote_pack" class="accent-primary">
+                <span>Debug</span>
+              </label>
+            </div>
+            <button id="btn-apply-starter-pack" type="button" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all shadow-md shadow-primary/20">Применить набор</button>
+          </section>
+        </div>
+      </div>
+
+      <!-- Tab: Все настройки -->
+      <div id="tab-settings" class="tab-content">
+        <div class="space-y-3">
+
+          <!-- Системные -->
+          <details class="accordion lk-panel group rounded-xl overflow-hidden" open>
+            <summary class="px-6 py-4 font-semibold cursor-pointer flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-xl">tune</span> Системные</span>
+              <span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+            </summary>
+            <div class="accordion-body px-6 pb-5 space-y-4">
+              <div class="space-y-2 lk-form-field">
+                <label for="f-cycle_day" class="text-sm font-semibold text-slate-700 dark:text-slate-300">День цикла</label>
+                <div class="relative">
+                  <select id="f-cycle_day" data-key="cycle_day" class="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                    <option value="">—</option>
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                    <option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+                  </select>
+                  <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+                </div>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="f-tz" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Таймзона</label>
+                <div class="relative">
+                  <select id="f-tz" data-key="tz" class="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                    <option value="">Выберите таймзону</option>
+                    <option value="Europe/Moscow">Москва (UTC+3)</option>
+                    <option value="Europe/Kyiv">Киев (UTC+2/+3)</option>
+                    <option value="Europe/Minsk">Минск (UTC+3)</option>
+                    <option value="UTC">UTC</option>
+                    <option value="Europe/Lisbon">Лиссабон (UTC+0/+1)</option>
+                    <option value="Europe/London">Лондон (UTC+0/+1)</option>
+                    <option value="Europe/Berlin">Берлин (UTC+1/+2)</option>
+                    <option value="Europe/Istanbul">Стамбул (UTC+3)</option>
+                    <option value="Europe/Warsaw">Варшава (UTC+1/+2)</option>
+                    <option value="Asia/Almaty">Алматы (UTC+6)</option>
+                    <option value="Asia/Tashkent">Ташкент (UTC+5)</option>
+                    <option value="Asia/Tbilisi">Тбилиси (UTC+4)</option>
+                    <option value="Asia/Yerevan">Ереван (UTC+4)</option>
+                    <option value="Asia/Dubai">Дубай (UTC+4)</option>
+                    <option value="America/New_York">Нью-Йорк (UTC-5/-4)</option>
+                    <option value="America/Los_Angeles">Лос-Анджелес (UTC-8/-7)</option>
+                  </select>
+                  <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+                </div>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="f-name" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Имя</label>
+                <input type="text" id="f-name" data-key="name" maxlength="20" placeholder="Имя (до 20 символов)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              </div>
+            </div>
+          </details>
+
+          <!-- Утро и вечер -->
+          <details class="accordion lk-panel group rounded-xl overflow-hidden">
+            <summary class="px-6 py-4 font-semibold cursor-pointer flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-xl">wb_twilight</span> Утро и вечер</span>
+              <span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+            </summary>
+            <div class="accordion-body px-6 pb-5 space-y-4">
+              <div class="space-y-2 lk-form-field">
+                <label for="f-morning_algo" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Алгоритм утро</label>
+                <textarea id="f-morning_algo" data-key="morning_algo" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="f-evening_algo" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Алгоритм вечер</label>
+                <textarea id="f-evening_algo" data-key="evening_algo" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+              </div>
+            </div>
+          </details>
+
+          <section class="lk-panel p-6 rounded-xl space-y-4">
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">link</span>
+              Связки из Summary
+            </h3>
+            <div class="space-y-4">
+              <div class="space-y-2 lk-form-field">
+                <label for="s-link_main" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Связка в фокусе</label>
+                <textarea id="s-link_main" data-key="link_main" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="s-link_add" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Дополнительная связка</label>
+                <textarea id="s-link_add" data-key="link_add" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+              </div>
+            </div>
+          </section>
+
+          <!-- Инструкции ChatGPT -->
+          <details class="accordion lk-panel group rounded-xl overflow-hidden">
+            <summary class="px-6 py-4 font-semibold cursor-pointer flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-xl">psychology</span> Инструкции ChatGPT</span>
+              <span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+            </summary>
+            <div class="accordion-body px-6 pb-5 space-y-4" id="group-gpt"></div>
+          </details>
+
+          <!-- Ежедневные -->
+          <details class="accordion lk-panel group rounded-xl overflow-hidden">
+            <summary class="px-6 py-4 font-semibold cursor-pointer flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-xl">today</span> Ежедневные</span>
+              <span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+            </summary>
+            <div class="accordion-body px-6 pb-5 space-y-4">
+              <div class="space-y-2 lk-form-field">
+                <label for="f-affirm" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Аффирмация дня</label>
+                <textarea id="f-affirm" data-key="affirm" rows="2" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="f-video" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Цитата дня</label>
+                <textarea id="f-video" data-key="video" rows="2" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="f-msg_count" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Счётчик сообщений</label>
+                <input type="number" id="f-msg_count" data-key="msg_count" min="0" max="9999" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="f-sprint_task" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Задача спринта</label>
+                <textarea id="f-sprint_task" data-key="sprint_task" rows="2" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+              </div>
+            </div>
+          </details>
+
+        </div>
+      </div>
+
+      <!-- Tab: Summary -->
+      <div id="tab-consultations" class="tab-content">
+        <div class="space-y-6">
+
+          <section id="consul-upload" class="lk-panel p-6 rounded-xl space-y-5">
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">upload_file</span>
+              Новая консультация
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div class="space-y-2 lk-form-field">
+                <label for="consul-file" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Транскрипция (.txt, .md, .vtt)</label>
+                <input type="file" id="consul-file" accept=".txt,.md,.vtt" class="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:font-semibold hover:file:bg-primary/20 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 transition-all">
+                <p class="text-xs text-slate-400" id="consul-file-meta"></p>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="consul-notes" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Заметки (необязательно)</label>
+                <input type="file" id="consul-notes" accept=".txt,.md,.vtt" class="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:font-semibold hover:file:bg-primary/20 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 transition-all">
+                <p class="text-xs text-slate-400" id="consul-notes-meta"></p>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div class="space-y-2 lk-form-field">
+                <label for="consul-email" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Email для авто-отправки</label>
+                <div class="relative">
+                  <input type="email" id="consul-email" placeholder="you@example.com" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">mail</span>
+                </div>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Тип саммари</label>
+                <div class="flex gap-4 pt-2">
+                  <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="consul-summary-type" value="one_on_one" checked class="accent-primary"> Глубокий разбор</label>
+                </div>
+              </div>
+            </div>
+            <button id="btn-summarize" class="px-8 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all shadow-md shadow-primary/20 flex items-center gap-2">
+              <span class="material-symbols-outlined text-lg">auto_awesome</span> Создать саммари
+            </button>
+            <div id="consul-upload-error" class="inline-error"></div>
+          </section>
+
+          <div id="consul-processing" class="lk-panel lk-panel-muted p-6 rounded-xl items-center justify-center gap-3" style="display:none">
+            <div class="spinner"></div>
+            <p id="consul-processing-text" class="text-slate-500 dark:text-slate-400 text-sm">Обработка транскрипции...</p>
+          </div>
+
+          <section id="consul-result" class="lk-panel p-6 md:p-8 rounded-xl overflow-hidden relative" style="display:none">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
+            <div id="consul-result-head" class="mb-4"></div>
+            <div class="consul-actions flex flex-wrap gap-2 mb-6">
+              <button id="btn-apply" class="action-btn"><span class="material-symbols-outlined text-base">tune</span> Применить</button>
+              <button id="btn-download" class="action-btn"><span class="material-symbols-outlined text-base">download</span> Скачать</button>
+              <button id="btn-copy" class="action-btn"><span class="material-symbols-outlined text-base">content_copy</span> Копировать</button>
+              <button id="btn-email" class="action-btn"><span class="material-symbols-outlined text-base">mail</span> Email</button>
+              <button id="btn-posters" class="action-btn"><span class="material-symbols-outlined text-base">image</span> Плакаты</button>
+            </div>
+
+            <div id="consul-summary-html" class="consul-summary"></div>
+
+            <div id="consul-editor" class="consul-editor mt-6">
+              <h4 class="font-semibold text-sm">Редактор секций</h4>
+              <p class="text-xs text-slate-400">Удаляйте разделы или пункты перед отправкой на email.</p>
+              <div id="consul-editor-list" class="consul-editor-list"></div>
+              <button id="btn-consul-reset-editor" class="px-4 py-2 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors font-medium">Сбросить редактор</button>
+            </div>
+
+            <div id="consul-diff" class="consul-diff mt-4" style="display:none"></div>
+
+            <div id="consul-email-form" class="consul-email-form mt-4" style="display:none">
+              <input type="email" id="consul-email-input" placeholder="email@example.com" class="flex-1 min-w-0 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              <button id="btn-send-email" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all">Отправить</button>
+            </div>
+
+            <div id="consul-posters" class="mt-4" style="display:none">
+              <div id="consul-posters-error" class="inline-error"></div>
+              <div id="consul-posters-list"></div>
+            </div>
+          </section>
+
+          <details class="accordion lk-panel group rounded-xl overflow-hidden">
+            <summary class="px-6 py-4 font-semibold cursor-pointer flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-xl">history</span> История консультаций</span>
+              <span class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+            </summary>
+            <div class="accordion-body px-6 pb-5">
+              <div id="consul-history" class="consul-history"></div>
+            </div>
+          </details>
+
+        </div>
+      </div>
+
+      <!-- Tab: Дневники -->
+      <div id="tab-diaries" class="tab-content">
+        <div class="space-y-6">
+
+          <section class="lk-panel p-6 rounded-xl">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div class="space-y-2 lk-form-field">
+                <label for="diary-period-preset" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Период</label>
+                <div class="relative">
+                  <select id="diary-period-preset" class="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                    <option value="7">Последние 7 дней</option>
+                    <option value="14">Последние 14 дней</option>
+                    <option value="30">Последние 30 дней</option>
+                    <option value="custom">Произвольный</option>
+                  </select>
+                  <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+                </div>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="diary-date-from" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Дата начала</label>
+                <div class="relative">
+                  <input type="text" id="diary-date-from" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">calendar_today</span>
+                </div>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="diary-date-to" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Дата окончания</label>
+                <div class="relative">
+                  <input type="text" id="diary-date-to" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">calendar_month</span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button id="btn-diary-load" class="w-full min-h-[56px] px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 text-center">
+                <span class="material-symbols-outlined text-lg">sync</span> Обновить список
+              </button>
+              <button id="btn-diary-summarize" class="w-full min-h-[56px] px-8 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 text-center">
+                <span class="material-symbols-outlined text-lg">auto_awesome</span> Создать саммари за период
+              </button>
+            </div>
+            <div id="diary-error" class="inline-error mt-3"></div>
+          </section>
+
+          <div id="diary-processing" class="lk-panel lk-panel-muted p-6 rounded-xl items-center justify-center gap-3" style="display:none">
+            <div class="spinner"></div>
+            <p id="diary-processing-text" class="text-slate-500 dark:text-slate-400 text-sm">Формирую саммари дневников...</p>
+          </div>
+
+          <section id="diary-result" class="lk-panel p-6 md:p-8 rounded-xl overflow-hidden relative" style="display:none">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
+            <div id="diary-result-head" class="mb-4"></div>
+            <div class="flex flex-wrap items-center gap-2 mb-6">
+              <button id="btn-diary-copy" class="action-btn"><span class="material-symbols-outlined text-base">content_copy</span> Копировать</button>
+              <button id="btn-diary-email" class="action-btn"><span class="material-symbols-outlined text-base">mail</span> Отправить на почту</button>
+            </div>
+            <div id="diary-summary-html" class="consul-summary"></div>
+            <div id="diary-email-form" class="consul-email-form mt-4" style="display:none">
+              <input type="email" id="diary-email-input" placeholder="email@example.com" class="flex-1 min-w-0 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              <button id="btn-diary-send-email" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all">Отправить</button>
+            </div>
+          </section>
+
+          <section class="space-y-4 pb-8">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-bold">Последние записи</h3>
+              <span id="diary-list-meta" class="text-sm text-slate-400"></span>
+            </div>
+            <div id="diary-list" class="diary-list"></div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- Tab: Разбор -->
+      <div id="tab-razbor" class="tab-content">
+        <div class="space-y-6">
+
+          <section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <article class="lk-panel p-6 rounded-xl space-y-4">
+              <div class="space-y-1">
+                <h3 class="text-lg font-bold">Ложные понимания для SendPulse</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">10 слотов по 1000 символов. Автосохранение работает так же, как и у обычных переменных.</p>
+              </div>
+              <div id="group-razbor-sendpulse-false" class="space-y-4"></div>
+            </article>
+
+            <article class="lk-panel p-6 rounded-xl space-y-4">
+              <div class="space-y-1">
+                <h3 class="text-lg font-bold">Новые понимания для SendPulse</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">10 слотов по 1000 символов. Автосохранение работает так же, как и у обычных переменных.</p>
+              </div>
+              <div id="group-razbor-sendpulse-new" class="space-y-4"></div>
+            </article>
+          </section>
+
+          <section class="lk-panel p-6 rounded-xl space-y-4">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <h3 class="text-lg font-bold">История разборов</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Разборы, которые SendPulse прислал в Neon после завершения сценария.</p>
+              </div>
+              <span id="razbor-history-meta" class="text-sm text-slate-400"></span>
+            </div>
+            <div id="razbor-history-error" class="inline-error"></div>
+            <div id="razbor-history" class="consul-history"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Tab: Связки -->
+      <div id="tab-links" class="tab-content">
+        <div class="space-y-6">
+
+          <section class="lk-panel p-6 rounded-xl space-y-5">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div class="space-y-1">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary">link</span>
+                  Связки
+                </h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Связка в фокусе всегда синхронизируется с Summary, Базовыми и переменной ситуации. Ниже отдельно показаны сигналы, реестр связок и аналитика.</p>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button id="btn-link-process-signals" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-lg transition-colors flex items-center gap-2">
+                  <span class="material-symbols-outlined text-lg">auto_fix_high</span> Обновить сигналы
+                </button>
+              </div>
+              <p id="links-meta" class="text-sm text-slate-500 dark:text-slate-400">В работе: 0 / 10</p>
+            </div>
+            <div id="links-error" class="inline-error"></div>
+          </section>
+
+          <section class="lk-panel p-6 rounded-xl space-y-4">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+              <div class="space-y-1">
+                <h3 class="text-lg font-bold">Связка в фокусе</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Это та же самая связка, которая синхронизирована с Summary, Базовыми и переменной ситуации.</p>
+              </div>
+            </div>
+            <div id="links-report-overall" class="space-y-2"></div>
+          </section>
+
+          <section class="lk-panel p-6 rounded-xl space-y-4">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div class="space-y-1">
+                <h3 class="text-lg font-bold">Сигналы на разбор</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">AI предлагает: это прогресс по текущей связке, новая связка или шум, который не стоит учитывать.</p>
+              </div>
+              <p id="link-suggestions-meta" class="text-sm text-slate-500 dark:text-slate-400"></p>
+            </div>
+            <div id="link-suggestions-list" class="space-y-3"></div>
+          </section>
+
+          <section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <article class="lk-panel p-6 rounded-xl space-y-4">
+              <div class="space-y-1">
+                <div class="flex items-center justify-between gap-4">
+                  <h3 class="text-lg font-bold">Рабочие связки</h3>
+                  <span id="links-active-count" class="text-sm text-slate-500 dark:text-slate-400"></span>
+                </div>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Все связки в работе. Связка в фокусе показана отдельно выше.</p>
+              </div>
+              <div id="links-active-list" class="space-y-3"></div>
+            </article>
+
+            <article class="lk-panel p-6 rounded-xl space-y-4">
+              <div class="space-y-1">
+                <div class="flex items-center justify-between gap-4">
+                  <h3 class="text-lg font-bold">Архив связок</h3>
+                  <span id="links-inactive-count" class="text-sm text-slate-500 dark:text-slate-400"></span>
+                </div>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Связки, которые пока не находятся в работе, но остаются в реестре.</p>
+              </div>
+              <div id="links-inactive-list" class="space-y-3"></div>
+            </article>
+          </section>
+
+          <section class="lk-panel p-6 rounded-xl space-y-4">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div class="space-y-1">
+                <h3 class="text-lg font-bold">Аналитика</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Здесь отдельно показаны общая активность за период и подтверждения по связкам.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="relative">
+                  <select id="links-report-period" class="appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm">
+                    <option value="8w">8 недель</option>
+                    <option value="12w">12 недель</option>
+                    <option value="6m">6 месяцев</option>
+                  </select>
+                  <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-base">expand_more</span>
+                </div>
+                <button id="btn-links-refresh-report" class="action-btn"><span class="material-symbols-outlined text-base">bar_chart</span> Обновить</button>
+              </div>
+            </div>
+            <div id="links-report-chart" class="space-y-3"></div>
+            <div id="links-report-top" class="space-y-2"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Tab: Ретро -->
+      <div id="tab-retro" class="tab-content">
+        <div class="space-y-6">
+
+          <section class="lk-panel p-6 rounded-xl">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div class="space-y-2 lk-form-field">
+                <label for="retro-period-preset" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Период</label>
+                <div class="relative">
+                  <select id="retro-period-preset" class="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                    <option value="7">Последние 7 дней</option>
+                    <option value="custom">Произвольный</option>
+                  </select>
+                  <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+                </div>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="retro-date-from" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Дата начала</label>
+                <div class="relative">
+                  <input type="date" id="retro-date-from" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">calendar_today</span>
+                </div>
+              </div>
+              <div class="space-y-2 lk-form-field">
+                <label for="retro-date-to" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Дата окончания</label>
+                <div class="relative">
+                  <input type="date" id="retro-date-to" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">calendar_month</span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-5 flex flex-wrap gap-3">
+              <button id="btn-retro-start" class="px-8 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all shadow-md shadow-primary/20 flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">history_edu</span> Сделать ретро
+              </button>
+            </div>
+            <div id="retro-error" class="inline-error mt-3"></div>
+          </section>
+
+          <div id="retro-processing" class="lk-panel lk-panel-muted p-6 rounded-xl items-center justify-center gap-3" style="display:none">
+            <div class="spinner"></div>
+            <p id="retro-processing-text" class="text-slate-500 dark:text-slate-400 text-sm">Формирую ретро...</p>
+          </div>
+
+          <section id="retro-result" class="lk-panel p-6 md:p-8 rounded-xl overflow-hidden relative" style="display:none">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
+            <div id="retro-result-head" class="mb-4"></div>
+            <div class="flex flex-wrap items-center gap-2 mb-6">
+              <button id="btn-retro-save" class="action-btn"><span class="material-symbols-outlined text-base">bookmark_added</span> Сохранить</button>
+              <button id="btn-retro-copy" class="action-btn"><span class="material-symbols-outlined text-base">content_copy</span> Копировать</button>
+              <button id="btn-retro-email" class="action-btn"><span class="material-symbols-outlined text-base">mail</span> Отправить на почту</button>
+            </div>
+            <div id="retro-summary-html" class="consul-summary"></div>
+            <section id="retro-successes-section" class="mt-6 space-y-4" style="display:none">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <h4 class="text-base font-bold text-slate-900 dark:text-slate-50">Успехи за период</h4>
+                <span id="retro-successes-meta" class="text-sm text-slate-500 dark:text-slate-400"></span>
+              </div>
+              <div id="retro-successes-list" class="space-y-3"></div>
+            </section>
+            <div id="retro-email-form" class="consul-email-form mt-4" style="display:none">
+              <input type="email" id="retro-email-input" placeholder="email@example.com" class="flex-1 min-w-0 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              <button id="btn-retro-send-email" class="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all">Отправить</button>
+            </div>
+          </section>
+
+          <section class="lk-panel p-6 rounded-xl space-y-4">
+            <div class="flex items-center justify-between gap-4">
+              <h3 class="text-lg font-bold">История ретро</h3>
+              <span id="retro-history-meta" class="text-sm text-slate-500 dark:text-slate-400"></span>
+            </div>
+            <div id="retro-history" class="consul-history"></div>
+          </section>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div id="app-modal" class="app-modal" aria-hidden="true">
+    <div class="app-modal-dialog lk-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="app-modal-title">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="material-symbols-outlined text-primary">check_circle</span>
+        <h3 id="app-modal-title" class="text-lg font-bold">Готово</h3>
+      </div>
+      <p id="app-modal-message" class="text-sm text-slate-600 dark:text-slate-400"></p>
+      <button id="app-modal-ok" type="button" class="mt-3 self-end px-6 py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all">OK</button>
+    </div>
+  </div>
+
+  <div id="link-editor-modal" class="app-modal" aria-hidden="true">
+    <div class="app-modal-dialog lk-modal-dialog link-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="link-editor-title">
+      <div class="flex items-start justify-between gap-4">
+        <div class="space-y-1">
+          <h3 id="link-editor-title" class="text-lg font-bold">Редактировать связку</h3>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Если эта связка находится в фокусе, изменения сразу синхронизируются с Summary, Базовыми и переменной ситуации.</p>
+        </div>
+        <button id="btn-link-editor-close" type="button" class="action-btn" aria-label="Закрыть">
+          <span class="material-symbols-outlined text-base">close</span>
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="space-y-2 lk-form-field">
+          <label for="link-form-stimulus" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Стимул</label>
+          <textarea id="link-form-stimulus" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+        </div>
+        <div class="space-y-2 lk-form-field">
+          <label for="link-form-reaction" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Реакция</label>
+          <textarea id="link-form-reaction" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+        </div>
+        <div class="space-y-2 lk-form-field">
+          <label for="link-form-old-belief" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Старое понимание</label>
+          <textarea id="link-form-old-belief" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+        </div>
+        <div class="space-y-2 lk-form-field">
+          <label for="link-form-new-belief" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Новое понимание</label>
+          <textarea id="link-form-new-belief" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+        </div>
+      </div>
+      <div class="space-y-2 lk-form-field">
+        <label for="link-form-new-actions" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Новые действия</label>
+        <textarea id="link-form-new-actions" rows="4" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-y"></textarea>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="space-y-2 lk-form-field">
+          <label for="link-form-status" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Статус</label>
+          <div class="relative">
+            <select id="link-form-status" class="w-full appearance-none bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              <option value="active">active</option>
+              <option value="inactive">inactive</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+          </div>
+        </div>
+        <div class="space-y-2 lk-form-field">
+          <label for="link-form-slot" class="text-sm font-semibold text-slate-700 dark:text-slate-300">Слот (1-10)</label>
+          <input type="number" id="link-form-slot" min="1" max="10" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+        </div>
+      </div>
+      <div id="link-editor-error" class="inline-error"></div>
+      <div class="flex flex-wrap justify-end gap-3">
+        <button id="btn-link-editor-cancel" type="button" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-lg transition-colors">Отмена</button>
+        <button id="btn-link-save" type="button" class="px-8 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all shadow-md shadow-primary/20 flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">save</span> Сохранить изменения
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>

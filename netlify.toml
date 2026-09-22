@@ -1,0 +1,31 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["busboy", "nodemailer"]
+
+[functions."summarize-background"]
+  external_node_modules = ["busboy", "nodemailer"]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/assets/app.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/assets/styles.css"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

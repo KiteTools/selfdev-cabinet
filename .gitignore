@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.dist-build/
+.netlify/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage/
+data/
+archive/
+preview/
